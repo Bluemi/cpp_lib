@@ -1,13 +1,13 @@
 #include <iostream>
 #include <tuple>
 
-template<typename ComponentType, typename __Specialization=void>
+template<typename T, typename S=void>
 struct base {
 	void foo() { std::cout << "base" << std::endl; }
 };
 
-template<typename RelationType>
-struct base<RelationType, std::enable_if_t<std::is_arithmetic_v<RelationType>>> {
+template<typename T>
+struct base<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
 	void foo() { std::cout << "specialization" << std::endl; }
 };
 

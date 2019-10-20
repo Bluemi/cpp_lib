@@ -1,13 +1,13 @@
 #include <iostream>
 #include <tuple>
 
-template<typename ComponentType>
-std::enable_if_t<!std::is_arithmetic_v<ComponentType>> foo(ComponentType) {
+template<typename T>
+std::enable_if_t<!std::is_arithmetic_v<T>/*, ReturnType*/> foo(T) {
 	std::cout << "base" << std::endl;
 }
 
-template<typename RelationType>
-std::enable_if_t<std::is_arithmetic_v<RelationType>> foo(RelationType) {
+template<typename T>
+std::enable_if_t<std::is_arithmetic_v<T>/*, ReturnType*/> foo(T) {
 	std::cout << "special" << std::endl;
 }
 
