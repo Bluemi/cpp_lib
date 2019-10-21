@@ -1,89 +1,61 @@
+--[[
+--	this bam script creates targets corresponding to the directories src/*
+--	those are named like the corresponding folder
+--
+--	e.g. src/template_specialization
+--	target to compile: "template_specialization"
+--	target to run:     "r_template_specialization"
+--
+--	target to compile all: "c"
+--	target to run     all: "r"
+--
+--	"compile" is the default target
+--]]
 
-Import("bam/lua/print_r.lua")
-Import("bam/lua/util.lua")
+conf = ScriptArgs["conf"] or "debug"
+build_dir = ScriptArgs["build_dir"] or "build"
+build_dir = PathJoin(build_dir, conf)
+src_dir = "src"
 
-plattform = "linux";
-
-function ValidiateArg(arg, value)
-	if arg == "conf" then
-		if conf ~= "debug" and conf ~= "release" then
-			error("Invalid value for argument 'conf': '"..value.."'. Valid values are 'debug' and 'release'")
-		end
-	elseif arg == "dir" then
-		
-	end
-	-- arch
-end
-
-function GenerateLibSettings(settings, name)
-	Import("bam/lib/" .. name .. "/" .. name .. ".lua")
-	lib:configure()
-	lib:apply(settings)
-end
-
-function GenerateGenerelSettings(settings)
+AddTool(function(s)
 	if conf == "debug" then
-		settings.debug = 1
-		settings.optimize = 0
+		s.debug = 1
+		s.optimize = 0
 	elseif conf == "release" then
-		settings.debug = 0
-		settings.optimize = 1
+		s.debug = 0
+		s.optimize = 1
 	end
 
-	settings.cc.flags:Add("-Wall")
-	settings.cc.flags_cxx:Add("--std=c++17")
-	settings.cc.includes:Add("src")
-	settings.cc.Output = function(settings, input)
+	s.cc.flags:Add("-Wall")
+	s.cc.flags_cxx:Add("--std=c++2a")
+	s.cc.includes:Add("src")
+	s.cc.Output = function(s, input)
 		input = input:gsub("^src/", "")
 		return PathJoin(PathJoin(build_dir, "obj"), PathBase(input))
 	end
-	settings.link.Output = function(settings, input)
+	s.link.Output = function(s, input)
 		return PathJoin(build_dir, PathBase(input))
 	end
+end)
+
+s = NewSettings()
+targets = CollectDirs(PathJoin(src_dir, "*"))
+
+PseudoTarget("c")
+DefaultTarget("c")
+PseudoTarget("r", "c")
+
+for _, target in ipairs(targets) do
+	local name = target:gsub("^src/", "")
+	local run = "r_"..name
+
+	local src = CollectRecursive(PathJoin(target, "*.cpp"))
+	local obj = Compile(s, src)
+	local bin = Link(s, name, obj)
+
+	PseudoTarget(name, bin)
+	PseudoTarget(run, name)
+	AddJob(run, "running "..name.."...", PathJoin(build_dir, name))
+	AddDependency("c", name)
+	AddDependency("r", run)
 end
-
-function GenerateClientSettings(settings)
-end
-
-if ScriptArgs["conf"] then
-	conf = ScriptArgs["conf"]
-else
-	conf = "debug"
-end
-ValidiateArg("conf", conf)
-
-if ScriptArgs["dir"] then
-	build_dir = ScriptArgs["dir"]
-else
-	build_dir = "bam/build"
-end
-ValidiateArg("dir", build_dir)
-build_dir = PathJoin(build_dir, conf)
-
-src_dir = "src"
-datasrc_dir = "res"
-
-settings = NewSettings()
-GenerateGenerelSettings(settings)
-GenerateClientSettings(settings)
-
-PseudoTarget("client")
-srcs = CollectRecursive(src_dir .. "/*.cpp")
-objs = Compile(settings, srcs)
-exe = Link(settings, "test", objs)
-AddDependency("client", exe)
-
-PseudoTarget("data")
-do
-	local data_files = CollectRecursive(datasrc_dir .. "/")
-	for i, file in pairs(data_files) do
-		local target = PathJoin(build_dir, file)
-		AddJob(target, file .. " > " .. target , "cp " .. file .. " " .. target)
-		AddDependency(target, file)
-		AddDependency("data", target)
-	end
-end
-
-PseudoTarget("all", "client", "data")
-PseudoTarget("game", "client", "data")
-DefaultTarget("game")

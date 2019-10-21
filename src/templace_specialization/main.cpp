@@ -1,5 +1,5 @@
-#include "template_specialisation/function_template_specialisation.hpp"
-#include "template_specialisation/struct_template_specialisation.hpp"
+#include "function_template_specialisation.hpp"
+#include "struct_template_specialisation.hpp"
 
 #include <iostream>
 
