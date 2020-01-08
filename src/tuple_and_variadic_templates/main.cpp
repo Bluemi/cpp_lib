@@ -3,7 +3,6 @@
 
 
 // ####################### Iterate tuple by members #######################
-
 template<size_t I = 0, typename ...Ts>
 std::enable_if_t<I == sizeof...(Ts)> print_tuple(const std::tuple<Ts...>&) {}
 
@@ -21,7 +20,7 @@ T inc_member(const T& t) {
 	return t + 1;
 }
 
-template<size_t ...I, typename ...Ts>
+template<std::size_t ...I, typename ...Ts>
 std::tuple<Ts...> inc_tuple_impl(
 	[[maybe_unused]] std::index_sequence<I...>,
 	const std::tuple<Ts...>& t
@@ -31,8 +30,7 @@ std::tuple<Ts...> inc_tuple_impl(
 
 template<typename ...Ts>
 std::tuple<Ts...> inc_tuple(const std::tuple<Ts...>& t) {
-	constexpr size_t tuple_size = std::tuple_size<std::tuple<Ts...>>::value;
-	return inc_tuple_impl(std::make_index_sequence<tuple_size>(), t);
+	return inc_tuple_impl(std::make_index_sequence<sizeof...(Ts)>(), t);
 }
 
 int main() {
